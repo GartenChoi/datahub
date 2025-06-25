@@ -10,7 +10,7 @@ This module contains a React application that serves as the DataHub UI.
 
 Feel free to take a look around, deploy, and contribute.
 
-Datahub Project의 datahub-web-react 부분만 따로 repository로 분리한 것
+Datahub Project의 datahub-web-react 부분만 따로 repository로 분리한 것 (v1.1.0rc7 버전 기준).
 원본에서 구조적으로 수정한 부분:
 - react만 따로 repository로 만들기 위해서 schema에 사용되는 ../datahub-graphql-core/src/main/resources/*.graphql 파일을 /graphql-core로 복사함.
 - env-

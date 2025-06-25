@@ -10,17 +10,18 @@ variables:
     - >
       if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
         ECR_DOMAIN=${ECR_DOMAIN_LIVE}
-        ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME_LIVE}
         NPM_COMMAND="build:live"
         AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_LIVE}
         AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_LIVE}
+        HELM_VALUES_FILE_PATH="datahub-deployment-manifest/values/live/data-catalog/data-catalog/values.yaml"
       else
         ECR_DOMAIN=${ECR_DOMAIN_DEV}
-        ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME_DEV}
         NPM_COMMAND="build:dev"
         AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_DEV}
         AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_DEV}
+        HELM_VALUES_FILE_PATH="datahub-deployment-manifest/values/dev/data-catalog/data-catalog/values.yaml"
       fi
+    - ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME}
     - DEPLOY_IMAGE_TAG="${ECR_DOMAIN}/${ECR_REPOSITORY_NAME}:${CI_COMMIT_SHA}"
     - DEPLOY_IMAGE_TAG_ALIAS="${ECR_DOMAIN}/${ECR_REPOSITORY_NAME}:${CI_COMMIT_REF_NAME}"
   tags:
@@ -60,15 +61,13 @@ deploy:
     name: docker.nexon.com/alpine/git:latest
   script:
     - MANIFEST="https://${MANIFEST_USER}:${MANIFEST_PASS}@${MANIFEST_URL}"
-    - HELM_VALUES_FILE_PATH="datahub-deployment-manifest/charts/data-catalog/values.yaml"
-    - HELM_TAG_LINE = 17
 
     - echo "deploy"
     - rm -rf .git
     - git clone $MANIFEST
     - git config --global user.email "${GIT_EMAIL}"
     - git config --global user.name "${GIT_USER}"
-    - sed -i "${HELM_TAG_LINE}s/tag:\ .*/tag:\ ${CI_COMMIT_SHA}/" "${HELM_VALUES_FILE_PATH}"
+    - sed -i "s/tag:\ .*/tag:\ ${CI_COMMIT_SHA}/" "${HELM_VALUES_FILE_PATH}"
     - cd $MANIFEST_PROJECT
     - git add .
     - git commit -m "Ref ${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}@${CI_COMMIT_SHA}"
