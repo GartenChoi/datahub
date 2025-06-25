@@ -67,7 +67,7 @@ task yarnGenerate(type: YarnTask, dependsOn: yarnInstall) {
   inputs.files(
     yarnInstall.inputs.files,
     file('codegen.yml'),
-    project.fileTree(dir: "../datahub-graphql-core/src/main/resources/", include: "*.graphql"),
+    project.fileTree(dir: "datahub-graphql-core", include: "*.graphql"),
     project.fileTree(dir: "src", include: "**/*.graphql"),
   )
 
@@ -150,7 +150,7 @@ task yarnBuild(type: YarnTask, dependsOn: [yarnInstall, yarnGenerate]) {
 def externalPrettierConfigs = [
     [
         name: 'graphql',
-        pattern: 'datahub-graphql-core/src/main/resources/**/*.graphql'
+        pattern: 'graphql-core/**/*.graphql'
     ],
     [
         name: 'githubActions',

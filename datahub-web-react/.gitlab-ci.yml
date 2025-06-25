@@ -1,0 +1,80 @@
+variables:
+  GIT_EMAIL: data_service_dev@nexon.co.kr
+  GIT_USER: data_service_dev
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+.set_variables_template: &set_variables
+  before_script:
+    - echo BRANCH=$CI_COMMIT_REF_NAME
+    - >
+      if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        ECR_DOMAIN=${ECR_DOMAIN_LIVE}
+        ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME_LIVE}
+        NPM_COMMAND="build:live"
+        AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_LIVE}
+        AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_LIVE}
+      else
+        ECR_DOMAIN=${ECR_DOMAIN_DEV}
+        ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME_DEV}
+        NPM_COMMAND="build:dev"
+        AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_DEV}
+        AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_DEV}
+      fi
+    - DEPLOY_IMAGE_TAG="${ECR_DOMAIN}/${ECR_REPOSITORY_NAME}:${CI_COMMIT_SHA}"
+    - DEPLOY_IMAGE_TAG_ALIAS="${ECR_DOMAIN}/${ECR_REPOSITORY_NAME}:${CI_COMMIT_REF_NAME}"
+  tags:
+    - kubu-autoscale-linux
+
+stages:
+  - build
+  - deploy
+
+build:
+  <<: *set_variables
+  stage: build
+  image: docker.nexon.com/docker:24.0.4
+  services:
+    - name: docker:dind
+  script:
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+
+    - echo "build and push image ${DEPLOY_IMAGE_TAG} ${DEPLOY_IMAGE_TAG_ALIAS}"
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip install awscli
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_DOMAIN
+    - until nc -z -w 4 localhost 2375; do sleep 1;echo "waiting..."; done
+    - docker buildx create --platform linux/amd64,linux/arm64/v8 --name multibuilder --driver docker-container --use
+    - docker buildx build --platform linux/amd64,linux/arm64/v8 -t $DEPLOY_IMAGE_TAG -t $DEPLOY_IMAGE_TAG_ALIAS --build-arg NPM_COMMAND=$NPM_COMMAND --push .
+  only:
+    refs:
+      - develop
+      - main
+
+deploy:
+  <<: *set_variables
+  stage: deploy
+  image:
+    entrypoint: ['']
+    name: docker.nexon.com/alpine/git:latest
+  script:
+    - MANIFEST="https://${MANIFEST_USER}:${MANIFEST_PASS}@${MANIFEST_URL}"
+    - HELM_VALUES_FILE_PATH="datahub-deployment-manifest/charts/data-catalog/values.yaml"
+    - HELM_TAG_LINE = 17
+
+    - echo "deploy"
+    - rm -rf .git
+    - git clone $MANIFEST
+    - git config --global user.email "${GIT_EMAIL}"
+    - git config --global user.name "${GIT_USER}"
+    - sed -i "${HELM_TAG_LINE}s/tag:\ .*/tag:\ ${CI_COMMIT_SHA}/" "${HELM_VALUES_FILE_PATH}"
+    - cd $MANIFEST_PROJECT
+    - git add .
+    - git commit -m "Ref ${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}@${CI_COMMIT_SHA}"
+    - git remote add origin2 $MANIFEST
+    - git push origin2 HEAD:master
+  only:
+    refs:
+      - develop
+      - main

@@ -42,10 +42,10 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
     };
     const proxyOptions = {
-        '/logIn': frontendProxy,
-        '/authenticate': frontendProxy,
-        '/api/v2/graphql': frontendProxy,
-        '/track': frontendProxy,
+        '/frontend/logIn': frontendProxy,
+        '/frontend/authenticate': frontendProxy,
+        '/frontend/api/v2/graphql': frontendProxy,
+        '/frontend/track': frontendProxy,
     };
 
     const devPlugins = mode === 'development' ? [injectMeticulous()] : [];

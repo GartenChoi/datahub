@@ -10,6 +10,13 @@ This module contains a React application that serves as the DataHub UI.
 
 Feel free to take a look around, deploy, and contribute.
 
+Datahub Project의 datahub-web-react 부분만 따로 repository로 분리한 것
+원본에서 구조적으로 수정한 부분:
+- react만 따로 repository로 만들기 위해서 schema에 사용되는 ../datahub-graphql-core/src/main/resources/*.graphql 파일을 /graphql-core로 복사함.
+- env-
+- windows에서 개발할 수 있도록 cross-env 설치하고 package.json 스크립트 cross-env 추가.
+- 여러 env를 관리할 수 있도록 .env 대신 /env 폴더로 관리. env-cmd 설치하고 package.json 스크립트 env-cmd 추가.
+
 ## Functional Goals
 
 The initial milestone for the app was to achieve functional parity with the previous Ember app. This meant supporting

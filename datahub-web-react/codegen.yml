@@ -1,6 +1,6 @@
 overwrite: true
 schema:
-    - '../datahub-graphql-core/src/main/resources/*.graphql'
+    - 'graphql-core/*.graphql'
 config:
     scalars:
         Long: number
@@ -23,6 +23,6 @@ generates:
             - 'typescript-react-apollo'
             - add:
                   content: '/* eslint-disable */'
-hooks:
-    afterAllFileWrite:
-        - prettier --write
+#hooks:
+#    afterAllFileWrite:
+#        - npx prettier --write "src/**/*.generated.ts"
