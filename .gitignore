@@ -130,3 +130,5 @@ test-models/bin/
 datahub-executor/
 datahub-integrations-service/
 metadata-ingestion-modules/acryl-cloud
+
+metadata-integration/tests/integration/delta_lake/test_data/delta_tables_nested_datatype/**/*.snappy.parquet
